@@ -52,9 +52,39 @@ function QuestionEditor({
           value={question.text}
           onChange={(e) => onUpdate({ ...question, text: e.target.value })}
           placeholder="Enter your question"
-          className="text-md font-semibold"
+          className="flex-grow text-md font-semibold"
         />
-        <div className="flex items-center gap-2 ml-auto">
+        <Select
+            value={question.type}
+            onValueChange={(type: QuestionType) => {
+                const updatedQuestion: Question = {
+                    id: question.id,
+                    text: question.text,
+                    required: question.required,
+                    type: type,
+                };
+                if (type === 'multiple-choice' || type === 'checkbox') {
+                    updatedQuestion.options = ['Option 1'];
+                } else if (type === 'likert') {
+                    updatedQuestion.options = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
+                } else if (type === 'rating') {
+                    updatedQuestion.scale = 5;
+                }
+                onUpdate(updatedQuestion);
+            }}
+        >
+            <SelectTrigger className="w-[180px]">
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                {questionTypeOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => onMove('up')} disabled={isFirst}>
                 <ArrowUp className="h-4 w-4" />
             </Button>
@@ -183,18 +213,14 @@ export function FormBuilder() {
                 ))}
             </div>
 
-            <Select onValueChange={(value) => addQuestion(value as QuestionType)}>
-                <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Add a new question..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {questionTypeOptions.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            <Button
+                onClick={() => addQuestion('short-text')}
+                variant="outline"
+                className="w-full"
+            >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Question
+            </Button>
 
         </div>
         <div className="lg:col-span-1 space-y-6">
