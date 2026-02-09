@@ -5,12 +5,9 @@ import { usePathname } from 'next/navigation';
 import {
   BarChart3,
   ClipboardList,
-  Home,
   LayoutDashboard,
   Menu,
-  QrCode,
   Settings,
-  Users,
 } from 'lucide-react';
 
 import { Logo } from '@/components/icons';
@@ -27,8 +24,8 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/forms/builder', icon: ClipboardList, label: 'Forms' },
-  { href: '#', icon: BarChart3, label: 'Analytics' },
-  { href: '#', icon: Settings, label: 'Settings' },
+  { href: '/dashboard', icon: BarChart3, label: 'Analytics' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 function SidebarNav() {

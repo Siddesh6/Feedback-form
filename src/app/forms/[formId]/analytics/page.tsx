@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -33,6 +36,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type AnalyticsPageProps = {
   params: {
@@ -47,13 +52,16 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
   }
   const responses = getResponsesByFormId(form.id);
 
-  const formUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/forms/${form.id}` 
-    : `https://example.com/forms/${form.id}`;
+  const [formUrl, setFormUrl] = useState('');
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-    formUrl
-  )}`;
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = `${window.location.origin}/forms/${form.id}`;
+      setFormUrl(url);
+      setQrCodeUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`);
+    }
+  }, [form.id]);
 
   return (
     <AdminLayout>
@@ -76,9 +84,17 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4">
-              <Image src={qrCodeUrl} alt="QR Code" width={200} height={200} data-ai-hint="qr code"/>
+              {qrCodeUrl ? (
+                <Image src={qrCodeUrl} alt="QR Code" width={200} height={200} data-ai-hint="qr code"/>
+              ) : (
+                <Skeleton className="h-[200px] w-[200px]" />
+              )}
               <p className="text-sm text-muted-foreground">Or share this link:</p>
-              <input readOnly value={formUrl} className="w-full rounded-md border bg-muted px-3 py-2 text-sm" />
+              {formUrl ? (
+                <Input readOnly value={formUrl} className="w-full rounded-md border bg-muted px-3 py-2 text-sm" />
+              ) : (
+                <Skeleton className="h-10 w-full" />
+              )}
             </div>
           </DialogContent>
         </Dialog>
