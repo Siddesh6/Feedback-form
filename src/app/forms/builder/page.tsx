@@ -1,5 +1,18 @@
 import { AdminLayout } from "@/components/layout/admin-layout";
-import { FormBuilder } from "@/components/forms/form-builder";
+import dynamic from "next/dynamic";
+
+const FormBuilder = dynamic(
+    () => import('@/components/forms/form-builder').then((mod) => mod.FormBuilder),
+    { 
+        ssr: false,
+        loading: () => (
+            <div className="space-y-4">
+                <div className="h-48 w-full animate-pulse rounded-md bg-muted"></div>
+                <div className="h-48 w-full animate-pulse rounded-md bg-muted"></div>
+            </div>
+        )
+    }
+);
 
 export default function FormBuilderPage() {
     return (
