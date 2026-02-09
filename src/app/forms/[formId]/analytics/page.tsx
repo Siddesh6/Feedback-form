@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { BarChart, Bot, MessageSquare, QrCode } from 'lucide-react';
@@ -39,14 +39,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type AnalyticsPageProps = {
-  params: {
-    formId: string;
-  };
-};
-
-export default function AnalyticsPage({ params }: AnalyticsPageProps) {
+export default function AnalyticsPage() {
+  const params = useParams<{ formId: string }>();
   const form = getFormById(params.formId);
+
   if (!form) {
     notFound();
   }
