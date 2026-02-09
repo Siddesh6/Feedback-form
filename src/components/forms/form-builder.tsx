@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Plus, GripVertical, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -118,7 +119,35 @@ function QuestionEditor({
                  <Button variant="outline" size="sm" className="mt-2" onClick={() => onUpdate({ ...question, options: [...(question.options || []), `Option ${ (question.options?.length || 0) + 1}`] })}>Add Option</Button>
             </div>
         )}
-        <div className="flex items-center justify-between">
+        <div className="space-y-2">
+            <Label>Question Image (Optional)</Label>
+            <div className="flex items-center gap-2">
+                <Input
+                placeholder="Paste image URL..."
+                value={question.imageUrl || ''}
+                onChange={(e) => onUpdate({ ...question, imageUrl: e.target.value })}
+                />
+            </div>
+            {question.imageUrl && (
+                <div className="mt-2 relative aspect-video w-full max-w-sm rounded-md overflow-hidden border">
+                <Image
+                    src={question.imageUrl}
+                    alt="Question preview"
+                    fill
+                    className="object-cover"
+                />
+                <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7 z-10"
+                    onClick={() => onUpdate({ ...question, imageUrl: undefined })}
+                >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+                </div>
+            )}
+        </div>
+        <div className="flex items-center justify-between border-t pt-4 mt-4">
             <div className="flex items-center space-x-2">
                 <Switch id={`required-${question.id}`} checked={question.required} onCheckedChange={(checked) => onUpdate({ ...question, required: checked })} />
                 <Label htmlFor={`required-${question.id}`}>Required</Label>

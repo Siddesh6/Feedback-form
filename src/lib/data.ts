@@ -66,7 +66,7 @@ export const forms: Form[] = [
     category: 'Workshop',
     questions: [
         { id: 'q1-new', text: 'What is your name?', type: 'short-text', required: true },
-        { id: 'q2-new', text: 'What did you think of the event?', type: 'long-text', required: false },
+        { id: 'q2-new', text: 'What did you think of the event?', type: 'long-text', required: false, imageUrl: 'https://picsum.photos/seed/event/400/200' },
         { id: 'q3-new', text: 'Would you recommend this to a friend?', type: 'yes-no', required: true },
     ],
     anonymous: true,

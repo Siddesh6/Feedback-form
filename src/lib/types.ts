@@ -2,6 +2,7 @@ export type Question = {
   id: string;
   text: string;
   type: 'short-text' | 'long-text' | 'multiple-choice' | 'checkbox' | 'rating' | 'yes-no' | 'likert';
+  imageUrl?: string;
   options?: string[];
   scale?: 5 | 10;
   required: boolean;

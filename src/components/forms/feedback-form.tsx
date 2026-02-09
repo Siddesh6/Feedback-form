@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { ArrowLeft, Send } from 'lucide-react';
 import type { Form, Question } from '@/lib/types';
 
@@ -19,12 +20,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
 function QuestionRenderer({ question }: { question: Question }) {
-  const { id, type, text, required, options, scale } = question;
+  const { id, type, text, required, options, scale, imageUrl } = question;
+
+  const imageDisplay = imageUrl ? (
+    <div className="mb-4 relative h-64 w-full rounded-md overflow-hidden">
+        <Image src={imageUrl} alt={text} fill className="object-contain" />
+    </div>
+  ) : null;
 
   switch (type) {
     case 'short-text':
       return (
         <div className="space-y-2">
+          {imageDisplay}
           <Label htmlFor={id}>{text}</Label>
           <Input id={id} required={required} />
         </div>
@@ -32,6 +40,7 @@ function QuestionRenderer({ question }: { question: Question }) {
     case 'long-text':
       return (
         <div className="space-y-2">
+          {imageDisplay}
           <Label htmlFor={id}>{text}</Label>
           <Textarea id={id} required={required} />
         </div>
@@ -39,6 +48,7 @@ function QuestionRenderer({ question }: { question: Question }) {
     case 'yes-no':
       return (
         <div className="space-y-2">
+          {imageDisplay}
           <Label>{text}</Label>
           <RadioGroup className="flex items-center gap-4">
             <div className="flex items-center space-x-2">
@@ -55,6 +65,7 @@ function QuestionRenderer({ question }: { question: Question }) {
     case 'multiple-choice':
       return (
         <div className="space-y-2">
+          {imageDisplay}
           <Label>{text}</Label>
           <RadioGroup>
             {options?.map((option) => (
@@ -69,6 +80,7 @@ function QuestionRenderer({ question }: { question: Question }) {
     case 'checkbox':
         return (
             <div className="space-y-2">
+                {imageDisplay}
                 <Label>{text}</Label>
                 <div className="space-y-2">
                 {options?.map((option) => (
@@ -83,6 +95,7 @@ function QuestionRenderer({ question }: { question: Question }) {
     case 'rating':
         return (
             <div className="space-y-2">
+                {imageDisplay}
                 <Label>{text}</Label>
                 <RadioGroup className="flex flex-wrap gap-2">
                 {Array.from({ length: scale || 5 }, (_, i) => i + 1).map((val) => (
@@ -97,6 +110,7 @@ function QuestionRenderer({ question }: { question: Question }) {
     case 'likert':
         return (
             <div className="space-y-2">
+                {imageDisplay}
                 <Label className="block mb-2">{text}</Label>
                 <RadioGroup className="flex flex-col sm:flex-row justify-between gap-4">
                     {options?.map((option) => (
