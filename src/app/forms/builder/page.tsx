@@ -1,3 +1,5 @@
+'use client';
+
 import { AdminLayout } from "@/components/layout/admin-layout";
 import dynamic from "next/dynamic";
 
