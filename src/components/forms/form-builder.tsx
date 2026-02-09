@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Plus, GripVertical, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -133,6 +134,7 @@ export function FormBuilder() {
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const { toast } = useToast();
+  const router = useRouter();
 
   const addQuestion = (type: QuestionType) => {
     const newQuestion: Question = {
@@ -175,8 +177,11 @@ export function FormBuilder() {
     console.log({ title, description, questions });
     toast({
       title: 'Form Saved!',
-      description: 'Your feedback form has been successfully saved.',
+      description: 'Redirecting to analytics and sharing page.',
     });
+    // In a real app, this would use the ID of the form just saved.
+    // For this demo, we redirect to a pre-added form's analytics page.
+    router.push('/forms/user-created-form-1/analytics');
   }
 
   return (
@@ -250,7 +255,7 @@ export function FormBuilder() {
                 </CardContent>
             </Card>
             <div className="flex gap-2">
-                <Button variant="outline" className="w-full">Preview</Button>
+                <Button variant="outline" className="w-full" onClick={() => window.open('/forms/user-created-form-1', '_blank')}>Preview</Button>
                 <Button className="w-full" onClick={handleSave}>Save Form</Button>
             </div>
         </div>

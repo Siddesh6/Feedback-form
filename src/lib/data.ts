@@ -59,6 +59,21 @@ export const forms: Form[] = [
     createdAt: '2024-05-10T00:00:00Z',
     responseCount: 56,
   },
+  {
+    id: 'user-created-form-1',
+    title: 'My Custom Form',
+    description: 'This is a form created from the form builder, ready for preview and sharing.',
+    category: 'Workshop',
+    questions: [
+        { id: 'q1-new', text: 'What is your name?', type: 'short-text', required: true },
+        { id: 'q2-new', text: 'What did you think of the event?', type: 'long-text', required: false },
+        { id: 'q3-new', text: 'Would you recommend this to a friend?', type: 'yes-no', required: true },
+    ],
+    anonymous: true,
+    status: 'active',
+    createdAt: '2024-07-26T10:00:00Z',
+    responseCount: 1,
+  },
 ];
 
 export const responses: FeedbackResponse[] = [
@@ -104,6 +119,18 @@ export const responses: FeedbackResponse[] = [
             { questionId: 'w4', value: 'AI in healthcare' },
         ],
         textFeedback: 'AI in healthcare',
+    },
+    {
+        id: 'resp-new-1',
+        formId: 'user-created-form-1',
+        isAnonymous: true,
+        submittedAt: '2024-07-26T11:00:00Z',
+        answers: [
+            { questionId: 'q1-new', value: 'Jane Doe' },
+            { questionId: 'q2-new', value: 'The event was very insightful, thank you!' },
+            { questionId: 'q3-new', value: 'Yes' },
+        ],
+        textFeedback: 'The event was very insightful, thank you!',
     }
 ];
 
