@@ -65,29 +65,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleTestLogin = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await signInWithEmailAndPassword(auth, 'test@gmail.com', 'test@123');
-      toast({
-        title: "Logged in as test user!",
-        description: "Redirecting to your dashboard.",
-      });
-      router.push('/dashboard');
-    } catch (err: any) {
-        let errorMessage = "Test user login failed. Please ensure the user 'test@gmail.com' is registered with password 'test@123'.";
-        setError(errorMessage);
-        toast({
-            variant: "destructive",
-            title: "Login failed",
-            description: errorMessage,
-        });
-    } finally {
-        setLoading(false);
-    }
-  }
-
   if (userLoading || user) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-secondary">
@@ -144,19 +121,6 @@ export default function LoginPage() {
               {loading ? <Loader2 className="animate-spin" /> : <>Login <ArrowRight className="ml-2 h-4 w-4"/></>}
             </Button>
           </form>
-          <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                      Or
-                  </span>
-              </div>
-          </div>
-            <Button type="button" variant="secondary" className="w-full" onClick={handleTestLogin} disabled={loading}>
-                {loading ? <Loader2 className="animate-spin" /> : 'Login as Test User'}
-            </Button>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
             <Link href="/signup" className="underline">
