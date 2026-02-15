@@ -49,7 +49,7 @@ export default function LandingPage() {
                     Transform Feedback into Actionable Insights
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    Feedback Insights Pro is the all-in-one platform for collecting, analyzing, and acting on feedback. Powerful, intuitive, and secure.
+                    OpinionLoop is the all-in-one platform for collecting, analyzing, and acting on feedback. Powerful, intuitive, and secure.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">

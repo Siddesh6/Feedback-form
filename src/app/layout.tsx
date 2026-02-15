@@ -16,7 +16,7 @@ const fontHeading = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'Feedback Insights Pro',
+  title: 'OpinionLoop',
   description:
     'The all-in-one platform for collecting, analyzing, and acting on feedback. Powerful, intuitive, and secure.',
 };
@@ -56,7 +56,7 @@ export default function RootLayout({
               </a>
             </p>
             <p className="text-xs text-gray-500">
-              Feedback Insights Pro • Built with Next.js & Firebase
+              OpinionLoop • Built with Next.js & Firebase
             </p>
           </div>
         </footer>
