@@ -45,7 +45,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
 export default function DashboardPage() {
@@ -238,11 +237,9 @@ export default function DashboardPage() {
                                 <ArrowUpRight className="h-4 w-4" />
                             </Link>
                             </Button>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => setFormToDelete(form)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </AlertDialogTrigger>
+                            <Button variant="ghost" size="icon" onClick={() => setFormToDelete(form)}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
                         </TableCell>
                         </TableRow>
                     ))}
