@@ -31,6 +31,16 @@ const questionTypeOptions: { value: QuestionType; label: string }[] = [
   { value: 'likert', label: 'Likert Scale' },
 ];
 
+const isValidUrl = (urlString?: string): boolean => {
+  if (!urlString) return false;
+  try {
+    new URL(urlString);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
 function QuestionEditor({
     question,
     onUpdate,
@@ -128,10 +138,10 @@ function QuestionEditor({
                 onChange={(e) => onUpdate({ ...question, imageUrl: e.target.value })}
                 />
             </div>
-            {question.imageUrl && (
+            {isValidUrl(question.imageUrl) && (
                 <div className="mt-2 relative aspect-video w-full max-w-sm rounded-md overflow-hidden border">
                 <Image
-                    src={question.imageUrl}
+                    src={question.imageUrl!}
                     alt="Question preview"
                     fill
                     className="object-cover"
