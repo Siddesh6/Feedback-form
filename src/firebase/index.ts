@@ -7,18 +7,20 @@ import { getFirestore, Firestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 import { useUser } from './auth/use-user';
 
-let firebaseApp: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
-
 function initializeFirebase() {
+  let firebaseApp: FirebaseApp;
+  
   if (getApps().length === 0) {
+    if (!firebaseConfig.apiKey) {
+      // This is a developer-facing error, so a console error is appropriate.
+      console.error("Firebase apiKey is missing. Please check your Firebase configuration in src/firebase/config.ts");
+    }
     firebaseApp = initializeApp(firebaseConfig);
   } else {
     firebaseApp = getApp();
   }
-  auth = getAuth(firebaseApp);
-  firestore = getFirestore(firebaseApp);
+  const auth = getAuth(firebaseApp);
+  const firestore = getFirestore(firebaseApp);
 
   return { firebaseApp, auth, firestore };
 }
