@@ -1,15 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3,
   ClipboardList,
   LayoutDashboard,
   Menu,
   Settings,
+  Loader2,
 } from 'lucide-react';
 
+import { useUser } from '@/firebase';
 import { Logo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +22,7 @@ import {
 } from '@/components/ui/sheet';
 import { UserNav } from '@/components/layout/user-nav';
 import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -50,6 +53,27 @@ function SidebarNav() {
 }
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // The useEffect hook will redirect.
+  }
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block print-hide">

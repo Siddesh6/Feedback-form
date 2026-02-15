@@ -1,12 +1,12 @@
 'use client';
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight, Loader2 } from 'lucide-react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Loader2 } from 'lucide-react';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { useAuth, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,13 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading: userLoading } = useUser();
-  const [email, setEmail] = useState('admin@example.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,36 +36,48 @@ export default function LoginPage() {
     }
   }, [user, userLoading, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setError("Passwords don't match.");
+      return;
+    }
+    if (password.length < 6) {
+        setError("Password should be at least 6 characters.");
+        return;
+    }
     setLoading(true);
     setError(null);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       toast({
-        title: "Logged in!",
-        description: "Redirecting to your dashboard.",
+        title: "Account created!",
+        description: "You are now logged in.",
       });
       router.push('/dashboard');
     } catch (err: any) {
-      let errorMessage = "Invalid email or password.";
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password.';
+      let errorMessage = "An unexpected error occurred.";
+      if (err.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already in use.';
+      } else if (err.code === 'auth/weak-password') {
+        errorMessage = 'The password is too weak. It should be at least 6 characters long.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Please enter a valid email address.';
       } else if (err.code) {
         errorMessage = err.code.replace('auth/', '').replace(/-/g, ' ');
       }
       setError(errorMessage);
       toast({
         variant: "destructive",
-        title: "Login failed",
+        title: "Sign up failed",
         description: errorMessage,
       });
     } finally {
       setLoading(false);
     }
   };
-
+  
   if (userLoading || user) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-secondary">
@@ -80,13 +93,13 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Logo className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center font-headline">Login</CardTitle>
+          <CardTitle className="text-2xl text-center font-headline">Create an Account</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the dashboard
+            Enter your email and password to sign up
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="grid gap-4">
+          <form onSubmit={handleSignup} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -99,26 +112,34 @@ export default function LoginPage() {
               />
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-              </div>
+              <Label htmlFor="password">Password</Label>
               <Input 
                 id="password" 
                 type="password" 
                 required 
                 value={password}
-                onChange={(e) => setPassword(e.target.value)} 
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-             {error && <p className="text-sm text-destructive text-center">{error}</p>}
+            <div className="grid gap-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input 
+                id="confirm-password" 
+                type="password" 
+                required 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            {error && <p className="text-sm text-destructive text-center">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin" /> : <>Login <ArrowRight className="ml-2 h-4 w-4"/></>}
+              {loading ? <Loader2 className="animate-spin" /> : 'Sign Up'}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link href="/signup" className="underline">
-              Sign up
+            Already have an account?{' '}
+            <Link href="/login" className="underline">
+              Login
             </Link>
           </div>
         </CardContent>

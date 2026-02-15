@@ -5,6 +5,7 @@ import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 
 import { firebaseConfig } from './config';
+import { useUser } from './auth/use-user';
 
 let firebaseApp: FirebaseApp;
 let auth: Auth;
@@ -22,5 +23,5 @@ function initializeFirebase() {
   return { firebaseApp, auth, firestore };
 }
 
-export { initializeFirebase };
+export { initializeFirebase, useUser };
 export * from './provider';
