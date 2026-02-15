@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { Bot, ThumbsDown, ThumbsUp, Meh, Lightbulb } from 'lucide-react';
 import { analyzeAllFeedback, getImprovementSuggestions } from '@/app/actions/feedback';
-import type { Form } from '@/lib/types';
+import type { Form, FeedbackResponse } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type SentimentResult = {
@@ -27,27 +27,40 @@ const sentimentColors = {
   neutral: 'bg-yellow-100 text-yellow-800 border-yellow-200',
 };
 
-
-export function AiInsights({ form }: { form: Form }) {
+export function AiInsights({ form, responses }: { form: Form, responses: FeedbackResponse[] }) {
   const [isPending, startTransition] = useTransition();
   const [sentiments, setSentiments] = useState<SentimentResult[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const textFeedbacks = responses
+    .map(r => r.textFeedback)
+    .filter(text => text && text.trim() !== '');
+
   const handleGenerateInsights = () => {
+    if (textFeedbacks.length === 0) {
+        setError("No text feedback available to analyze.");
+        return;
+    }
+
     startTransition(async () => {
       setError(null);
-      const sentimentResults = await analyzeAllFeedback(form.id);
-      if (sentimentResults) {
+      setSentiments([]);
+      setSuggestions([]);
+
+      try {
+        const sentimentResults = await analyzeAllFeedback(textFeedbacks);
         setSentiments(sentimentResults);
-      } else {
+      } catch (e) {
+        console.error(e);
         setError('Failed to analyze sentiment.');
       }
       
-      const suggestionResults = await getImprovementSuggestions(form.id, form.category);
-      if (suggestionResults) {
+      try {
+        const suggestionResults = await getImprovementSuggestions(textFeedbacks.join('\n---\n'), form.category);
         setSuggestions(suggestionResults);
-      } else {
+      } catch (e) {
+        console.error(e);
         setError((prev) => (prev ? `${prev} Failed to generate suggestions.` : 'Failed to generate suggestions.'));
       }
     });
@@ -68,11 +81,14 @@ export function AiInsights({ form }: { form: Form }) {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground mb-4">
-            Click the button to analyze text feedback for sentiment and generate actionable improvement suggestions.
+            Click the button to analyze all text-based feedback for sentiment and generate actionable improvement suggestions.
           </p>
-          <Button onClick={handleGenerateInsights} disabled={isPending}>
-            {isPending ? 'Generating...' : 'Generate AI Insights'}
+          <Button onClick={handleGenerateInsights} disabled={isPending || textFeedbacks.length === 0}>
+            {isPending ? 'Generating...' : `Generate AI Insights (${textFeedbacks.length} available feedbacks)`}
           </Button>
+          {textFeedbacks.length === 0 && (
+            <p className="text-sm text-muted-foreground mt-2">No text feedback found in responses to analyze.</p>
+          )}
         </CardContent>
       </Card>
 
@@ -104,7 +120,7 @@ export function AiInsights({ form }: { form: Form }) {
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Sentiment Analysis</CardTitle>
-                    <p className="text-sm text-muted-foreground">Overall Sentiment Score: {overallSentimentScore}</p>
+                    <CardDescription>Overall Sentiment Score: {overallSentimentScore}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
                     {sentiments.map((result, index) => (

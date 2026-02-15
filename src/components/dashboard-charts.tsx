@@ -1,7 +1,6 @@
 'use client';
 
-import { Bar, BarChart, CartesianGrid, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-
+import { Bar, BarChart, CartesianGrid, Pie, PieChart, Cell, Tooltip, XAxis, YAxis } from 'recharts';
 import {
   Card,
   CardContent,
@@ -9,67 +8,59 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import type { Form } from '@/lib/types';
+import { useMemo } from 'react';
 
-const responseData = [
-  { name: 'CS101', responses: 124, fill: 'var(--color-cs101)' },
-  { name: 'AI Ethics W.', responses: 38, fill: 'var(--color-ai-ethics)' },
-  { name: 'Tech Conf', responses: 890, fill: 'var(--color-tech-conf)' },
-  { name: 'Prof. Doe', responses: 56, fill: 'var(--color-prof-doe)' },
-];
+const chartColors = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
-const chartConfig: ChartConfig = {
-    responses: {
-      label: 'Responses',
-    },
-    cs101: {
-      label: 'CS101',
-      color: 'hsl(var(--chart-1))',
-    },
-    'ai-ethics': {
-      label: 'AI Ethics',
-      color: 'hsl(var(--chart-2))',
-    },
-    'tech-conf': {
-      label: 'Tech Conf',
-      color: 'hsl(var(--chart-3))',
-    },
-    'prof-doe': {
-      label: 'Prof. Doe',
-      color: 'hsl(var(--chart-4))',
-    },
-};
+export function DashboardCharts({ forms }: { forms: Form[] }) {
 
-const categoryData = [
-    { category: 'Course', count: 180, fill: 'var(--color-course)'},
-    { category: 'Workshop', count: 38, fill: 'var(--color-workshop)'},
-    { category: 'Event', count: 890, fill: 'var(--color-event)'},
-    { category: 'Faculty', count: 56, fill: 'var(--color-faculty)'},
-]
+  const responseData = useMemo(() => {
+    return forms.map(form => ({
+        name: form.title.length > 15 ? form.title.substring(0, 12) + '...' : form.title,
+        responses: form.responseCount
+    }));
+  }, [forms]);
 
-const categoryChartConfig: ChartConfig = {
-    count: {
-        label: "Responses"
-    },
-    course: {
-        label: "Course",
-        color: "hsl(var(--chart-1))"
-    },
-    workshop: {
-        label: "Workshop",
-        color: "hsl(var(--chart-2))"
-    },
-    event: {
-        label: "Event",
-        color: "hsl(var(--chart-3))"
-    },
-    faculty: {
-        label: "Faculty",
-        color: "hsl(var(--chart-4))"
-    }
-}
+  const chartConfig: ChartConfig = {
+      responses: {
+        label: 'Responses',
+        color: 'hsl(var(--primary))'
+      },
+  };
 
+  const categoryData = useMemo(() => {
+    if (forms.length === 0) return [];
+    const categories = forms.reduce((acc, form) => {
+        const categoryName = form.category || 'Uncategorized';
+        if (!acc[categoryName]) {
+            acc[categoryName] = 0;
+        }
+        acc[categoryName] += form.responseCount;
+        return acc;
+    }, {} as Record<string, number>);
 
-export function DashboardCharts() {
+    return Object.entries(categories).map(([category, count]) => ({
+        category,
+        count
+    }));
+  }, [forms]);
+
+  const categoryChartConfig: ChartConfig = useMemo(() => {
+    const config: ChartConfig = {
+        count: { label: "Responses" }
+    };
+    categoryData.forEach((data, index) => {
+        config[data.category.toLowerCase().replace(' ', '-')] = {
+            label: data.category,
+            color: chartColors[index % chartColors.length]
+        };
+    });
+    return config;
+  }, [categoryData]);
+
+  const noData = <div className="flex h-full w-full items-center justify-center text-muted-foreground">No data to display</div>;
+
   return (
     <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
       <Card>
@@ -77,20 +68,22 @@ export function DashboardCharts() {
           <CardTitle className="font-headline">Responses per Form</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-            <BarChart accessibilityLayer data={responseData}>
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                tickMargin={10}
-                axisLine={false}
-              />
-              <YAxis />
-              <Tooltip cursor={false} content={<ChartTooltipContent />} />
-              <Bar dataKey="responses" radius={8} />
-            </BarChart>
-          </ChartContainer>
+          {responseData.length > 0 ? (
+            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+              <BarChart accessibilityLayer data={responseData}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                />
+                <YAxis />
+                <Tooltip cursor={false} content={<ChartTooltipContent />} />
+                <Bar dataKey="responses" fill="var(--color-responses)" radius={8} />
+              </BarChart>
+            </ChartContainer>
+          ) : noData }
         </CardContent>
       </Card>
       <Card>
@@ -98,12 +91,18 @@ export function DashboardCharts() {
           <CardTitle className="font-headline">Responses by Category</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={categoryChartConfig} className="min-h-[300px] w-full">
-            <PieChart>
-              <Tooltip content={<ChartTooltipContent nameKey="count" hideLabel />} />
-              <Pie data={categoryData} dataKey="count" nameKey="category" innerRadius={60} />
-            </PieChart>
-          </ChartContainer>
+          {categoryData.length > 0 ? (
+            <ChartContainer config={categoryChartConfig} className="min-h-[300px] w-full">
+              <PieChart>
+                <Tooltip content={<ChartTooltipContent nameKey="count" hideLabel />} />
+                <Pie data={categoryData} dataKey="count" nameKey="category" innerRadius={60}>
+                  {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ChartContainer>
+          ) : noData }
         </CardContent>
       </Card>
     </div>

@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { Question } from '@/lib/types';
-import { forms } from '@/lib/data';
+import type { Form, Question } from '@/lib/types';
 import {
   Select,
   SelectContent,
@@ -19,6 +18,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore } from '@/firebase';
+import { addForm } from '@/lib/firestore-data';
 
 type QuestionType = Question['type'];
 
@@ -170,13 +171,15 @@ function QuestionEditor({
 }
 
 export function FormBuilder() {
-  const formToEdit = forms.find(f => f.id === 'user-created-form-1');
-  
-  const [title, setTitle] = useState(formToEdit?.title || 'My Custom Form');
-  const [description, setDescription] = useState(formToEdit?.description || '');
-  const [questions, setQuestions] = useState<Question[]>(formToEdit?.questions || []);
+  const [title, setTitle] = useState('New Feedback Form');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<'Event' | 'Course' | 'Faculty' | 'Workshop'>('Workshop');
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [anonymous, setAnonymous] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const firestore = useFirestore();
 
   const addQuestion = (type: QuestionType) => {
     const newQuestion: Question = {
@@ -215,15 +218,55 @@ export function FormBuilder() {
     setQuestions(newQuestions);
   }
 
-  const handleSave = () => {
-    console.log({ title, description, questions });
+  const handleSave = async () => {
+    if (!title.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'Title is required',
+            description: 'Please provide a title for your form.'
+        });
+        return;
+    }
+    if (!firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Database not available',
+            description: 'Please try again later.'
+        });
+        return;
+    }
+    
+    setIsSaving(true);
     toast({
-      title: 'Form Saved!',
-      description: 'Redirecting to analytics and sharing page.',
+      title: 'Saving Form...',
+      description: 'Your new form is being created.',
     });
-    // In a real app, this would update the form data before redirecting.
-    // For this demo, we just redirect to the pre-existing form's analytics page.
-    router.push('/forms/user-created-form-1/analytics');
+
+    const newForm: Omit<Form, 'id' | 'createdAt' | 'responseCount'> = {
+        title,
+        description,
+        questions,
+        category,
+        anonymous,
+        status: 'active',
+    };
+
+    try {
+        const newFormId = await addForm(firestore, newForm);
+        toast({
+          title: 'Form Saved!',
+          description: 'Redirecting to analytics and sharing page.',
+        });
+        router.push(`/forms/${newFormId}/analytics`);
+    } catch (error) {
+        console.error("Error saving form:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Failed to save form',
+            description: 'There was an error saving your form to the database.'
+        });
+        setIsSaving(false);
+    }
   }
 
   return (
@@ -238,7 +281,7 @@ export function FormBuilder() {
                         onChange={(e) => setTitle(e.target.value)}
                     />
                     <Textarea 
-                        placeholder="Form Description..."
+                        placeholder="Form Description (optional)..."
                         className="border-0 shadow-none focus-visible:ring-0"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
@@ -278,27 +321,30 @@ export function FormBuilder() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label>Category</Label>
-                        <Select defaultValue={formToEdit?.category || 'Workshop'}>
+                        <Select value={category} onValueChange={(value: any) => setCategory(value)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="event">Event</SelectItem>
-                                <SelectItem value="course">Course</SelectItem>
-                                <SelectItem value="faculty">Faculty</SelectItem>
-                                <SelectItem value="workshop">Workshop</SelectItem>
+                                <SelectItem value="Event">Event</SelectItem>
+                                <SelectItem value="Course">Course</SelectItem>
+                                <SelectItem value="Faculty">Faculty</SelectItem>
+                                <SelectItem value="Workshop">Workshop</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Switch id="anonymous-mode" defaultChecked={formToEdit?.anonymous}/>
+                        <Switch id="anonymous-mode" checked={anonymous} onCheckedChange={setAnonymous}/>
                         <Label htmlFor="anonymous-mode">Allow Anonymous Submissions</Label>
                     </div>
                 </CardContent>
             </Card>
-            <div className="flex gap-2">
-                <Button variant="outline" className="w-full" onClick={() => window.open('/forms/user-created-form-1', '_blank')}>Preview</Button>
-                <Button className="w-full" onClick={handleSave}>Save Form</Button>
+            <div className="flex flex-col gap-2">
+                <Button className="w-full" onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save and Publish'}
+                </Button>
+                 <Button variant="outline" className="w-full" disabled>Preview</Button>
+                 <p className="text-xs text-muted-foreground text-center">You can preview after saving.</p>
             </div>
         </div>
     </div>

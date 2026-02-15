@@ -1,7 +1,6 @@
 'use server';
 import { analyzeFeedbackSentiment } from '@/ai/flows/analyze-feedback-sentiment';
-import { generateImprovementSuggestions } from '@/ai/flows/generate-improvement-suggestions';
-import { getResponsesByFormId } from '@/lib/data';
+import { generateImprovementSuggestions as generateSuggestionsFlow } from '@/ai/flows/generate-improvement-suggestions';
 
 type SentimentResult = {
   feedbackText: string;
@@ -9,16 +8,11 @@ type SentimentResult = {
   score: number;
 };
 
-export async function analyzeAllFeedback(formId: string): Promise<SentimentResult[]> {
+export async function analyzeAllFeedback(feedbackTexts: string[]): Promise<SentimentResult[]> {
   try {
-    const responses = getResponsesByFormId(formId);
-    const textFeedbacks = responses
-      .map((r) => r.textFeedback)
-      .filter((text) => text && text.trim() !== '');
+    if (feedbackTexts.length === 0) return [];
 
-    if (textFeedbacks.length === 0) return [];
-
-    const sentimentPromises = textFeedbacks.map(async (feedbackText) => {
+    const sentimentPromises = feedbackTexts.map(async (feedbackText) => {
       const result = await analyzeFeedbackSentiment({ feedbackText });
       return { feedbackText, ...result };
     });
@@ -28,29 +22,22 @@ export async function analyzeAllFeedback(formId: string): Promise<SentimentResul
 
   } catch (error) {
     console.error('Error analyzing feedback sentiment:', error);
-    // In a real app, you'd want more robust error handling.
-    // For now, we return an empty array on failure.
-    return [];
+    // Re-throw the error to be handled by the client
+    throw new Error("Failed to analyze feedback sentiment.");
   }
 }
 
 export async function getImprovementSuggestions(
-  formId: string,
+  feedbackData: string,
   category: 'Event' | 'Course' | 'Faculty' | 'Workshop'
 ): Promise<string[]> {
   try {
-    const responses = getResponsesByFormId(formId);
-    const feedbackData = responses
-      .map((r) => r.textFeedback)
-      .filter(Boolean)
-      .join('\n---\n');
-
     if (!feedbackData) return ["Not enough text feedback to generate suggestions."];
     
-    const result = await generateImprovementSuggestions({ feedbackData, category });
+    const result = await generateSuggestionsFlow({ feedbackData, category });
     return result.suggestions;
   } catch(error) {
     console.error('Error generating improvement suggestions:', error);
-    return ["Failed to generate suggestions due to an internal error."];
+    throw new Error("Failed to generate suggestions due to an internal error.");
   }
 }
