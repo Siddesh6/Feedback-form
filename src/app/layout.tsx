@@ -1,14 +1,24 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
+import { Inter, Space_Grotesk } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseProvider } from '@/firebase';
+import { cn } from '@/lib/utils';
+import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const fontSans = Inter({
+  subsets: ['latin'],
+  variable: '--font-body',
+});
+
+const fontHeading = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-headline',
+});
 
 export const metadata: Metadata = {
   title: 'Feedback Insights Pro',
-  description: 'Collect, analyze, and act on feedback with AI-powered insights.',
+  description:
+    'The all-in-one platform for collecting, analyzing, and acting on feedback. Powerful, intuitive, and secure.',
 };
 
 export default function RootLayout({
@@ -18,17 +28,38 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
+      <head />
+      <body
+        className={cn(
+          'min-h-screen bg-background font-body antialiased flex flex-col',
+          fontSans.variable,
+          fontHeading.variable
+        )}
+      >
         <FirebaseProvider>
-          {children}
+          <div className="flex-1 flex flex-col">{children}</div>
+          <Toaster />
         </FirebaseProvider>
-        <Toaster />
+
+        <footer className="bg-gradient-to-r from-gray-900 via-black to-gray-900 text-gray-400 py-6 border-t border-gray-800">
+          <div className="max-w-6xl mx-auto text-center space-y-2 px-4">
+            <p className="text-sm font-medium text-gray-300">
+              © {new Date().getFullYear()} Siddesh B. All rights reserved.
+            </p>
+            <p className="text-sm">
+              Contact:{' '}
+              <a
+                href="mailto:siddeshb.contact@gmail.com"
+                className="text-blue-400 hover:text-blue-300 transition-colors duration-200 underline-offset-2 hover:underline"
+              >
+                siddeshb.contact@gmail.com
+              </a>
+            </p>
+            <p className="text-xs text-gray-500">
+              Feedback Insights Pro • Built with Next.js & Firebase
+            </p>
+          </div>
+        </footer>
       </body>
     </html>
   );

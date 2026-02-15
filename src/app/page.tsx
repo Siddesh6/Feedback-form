@@ -122,9 +122,6 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-      <footer className="flex items-center justify-center py-6 md:py-8 w-full shrink-0 border-t bg-background">
-        <p className="text-xs text-muted-foreground">&copy; 2024 Feedback Insights Pro. All rights reserved.</p>
-      </footer>
     </div>
   );
 }
