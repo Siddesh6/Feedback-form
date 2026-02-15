@@ -18,7 +18,7 @@ const fontHeading = Space_Grotesk({
 export const metadata: Metadata = {
   title: 'OpinionLoop',
   description:
-    'The all-in-one platform for collecting, analyzing, and acting on feedback. Powerful, intuitive, and secure.',
+    'Turn opinions into meaningful insights. Collect structured feedback, analyze responses instantly, and make smarter decisions with confidence.',
 };
 
 export default function RootLayout({

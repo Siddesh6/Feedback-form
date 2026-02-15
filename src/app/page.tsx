@@ -46,10 +46,10 @@ export default function LandingPage() {
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
                   <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none">
-                    Transform Feedback into Actionable Insights
+                    Turn opinions into meaningful insights.
                   </h1>
                   <p className="max-w-[600px] text-muted-foreground md:text-xl">
-                    OpinionLoop is the all-in-one platform for collecting, analyzing, and acting on feedback. Powerful, intuitive, and secure.
+                    Collect structured feedback, analyze responses instantly, and make smarter decisions with confidence.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
