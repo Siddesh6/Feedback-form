@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ArrowLeft, Send } from 'lucide-react';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+
 import type { Form, Question } from '@/lib/types';
+import { useFirestore } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -19,7 +22,15 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 
-function QuestionRenderer({ question }: { question: Question }) {
+function QuestionRenderer({
+  question,
+  value,
+  onChange,
+}: {
+  question: Question;
+  value: any;
+  onChange: (questionId: string, value: any) => void;
+}) {
   const { id, type, text, required, options, scale, imageUrl } = question;
 
   const imageDisplay = imageUrl ? (
@@ -34,7 +45,12 @@ function QuestionRenderer({ question }: { question: Question }) {
         <div className="space-y-2">
           {imageDisplay}
           <Label htmlFor={id}>{text}</Label>
-          <Input id={id} required={required} />
+          <Input
+            id={id}
+            required={required}
+            value={value || ''}
+            onChange={(e) => onChange(id, e.target.value)}
+          />
         </div>
       );
     case 'long-text':
@@ -42,7 +58,12 @@ function QuestionRenderer({ question }: { question: Question }) {
         <div className="space-y-2">
           {imageDisplay}
           <Label htmlFor={id}>{text}</Label>
-          <Textarea id={id} required={required} />
+          <Textarea
+            id={id}
+            required={required}
+            value={value || ''}
+            onChange={(e) => onChange(id, e.target.value)}
+          />
         </div>
       );
     case 'yes-no':
@@ -50,7 +71,11 @@ function QuestionRenderer({ question }: { question: Question }) {
         <div className="space-y-2">
           {imageDisplay}
           <Label>{text}</Label>
-          <RadioGroup className="flex items-center gap-4">
+          <RadioGroup
+            className="flex items-center gap-4"
+            value={value}
+            onValueChange={(val) => onChange(id, val)}
+          >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="Yes" id={`${id}-yes`} />
               <Label htmlFor={`${id}-yes`}>Yes</Label>
@@ -67,7 +92,7 @@ function QuestionRenderer({ question }: { question: Question }) {
         <div className="space-y-2">
           {imageDisplay}
           <Label>{text}</Label>
-          <RadioGroup>
+          <RadioGroup value={value} onValueChange={(val) => onChange(id, val)}>
             {options?.map((option) => (
               <div key={option} className="flex items-center space-x-2">
                 <RadioGroupItem value={option} id={`${id}-${option}`} />
@@ -78,26 +103,40 @@ function QuestionRenderer({ question }: { question: Question }) {
         </div>
       );
     case 'checkbox':
-        return (
-            <div className="space-y-2">
-                {imageDisplay}
-                <Label>{text}</Label>
-                <div className="space-y-2">
-                {options?.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                        <Checkbox id={`${id}-${option}`} />
-                        <Label htmlFor={`${id}-${option}`}>{option}</Label>
-                    </div>
-                ))}
-                </div>
-            </div>
-        );
+      const currentValues = (value as string[]) || [];
+      const handleCheckboxChange = (checked: boolean, option: string) => {
+        if (checked) {
+          onChange(id, [...currentValues, option]);
+        } else {
+          onChange(id, currentValues.filter((v) => v !== option));
+        }
+      };
+      return (
+        <div className="space-y-2">
+          {imageDisplay}
+          <Label>{text}</Label>
+          <div className="space-y-2">
+            {options?.map((option) => (
+              <div key={option} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`${id}-${option}`}
+                  checked={currentValues.includes(option)}
+                  onCheckedChange={(checked) =>
+                    handleCheckboxChange(!!checked, option)
+                  }
+                />
+                <Label htmlFor={`${id}-${option}`}>{option}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
     case 'rating':
         return (
             <div className="space-y-2">
                 {imageDisplay}
                 <Label>{text}</Label>
-                <RadioGroup className="flex flex-wrap gap-2">
+                <RadioGroup className="flex flex-wrap gap-2" value={value} onValueChange={(val) => onChange(id, val)}>
                 {Array.from({ length: scale || 5 }, (_, i) => i + 1).map((val) => (
                     <div key={val} className="flex items-center space-x-2">
                     <RadioGroupItem value={String(val)} id={`${id}-${val}`} />
@@ -112,7 +151,7 @@ function QuestionRenderer({ question }: { question: Question }) {
             <div className="space-y-2">
                 {imageDisplay}
                 <Label className="block mb-2">{text}</Label>
-                <RadioGroup className="flex flex-col sm:flex-row justify-between gap-4">
+                <RadioGroup className="flex flex-col sm:flex-row justify-between gap-4" value={value} onValueChange={(val) => onChange(id, val)}>
                     {options?.map((option) => (
                     <div key={option} className="flex items-center space-x-2">
                         <RadioGroupItem value={option} id={`${id}-${option}`} />
@@ -130,11 +169,18 @@ function QuestionRenderer({ question }: { question: Question }) {
 export function FeedbackForm({ form }: { form: Form }) {
   const router = useRouter();
   const { toast } = useToast();
+  const firestore = useFirestore();
+
   const [isAnonymous, setIsAnonymous] = useState(form.anonymous);
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const totalSteps = form.questions.length;
   const [currentStep, setCurrentStep] = useState(0);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAnswerChange = (questionId: string, value: string | string[]) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (currentStep < totalSteps - 1) {
         setCurrentStep(currentStep + 1);
@@ -143,9 +189,37 @@ export function FeedbackForm({ form }: { form: Form }) {
             title: "Submitting feedback...",
             description: "Please wait.",
         });
-        setTimeout(() => {
+        try {
+            const answersArray = Object.entries(answers).map(
+              ([questionId, value]) => ({ questionId, value })
+            );
+    
+            const textFeedback = answersArray
+              .filter(a => {
+                const question = form.questions.find(q => q.id === a.questionId);
+                return question?.type === 'short-text' || question?.type === 'long-text';
+              })
+              .map(a => Array.isArray(a.value) ? a.value.join(' ') : a.value)
+              .join(' ');
+    
+    
+            await addDoc(collection(firestore, 'responses'), {
+              formId: form.id,
+              answers: answersArray,
+              isAnonymous,
+              submittedAt: serverTimestamp(),
+              textFeedback: textFeedback
+            });
+    
             router.push(`/forms/${form.id}/thank-you`);
-        }, 1500);
+          } catch (error) {
+            console.error('Error submitting feedback:', error);
+            toast({
+              variant: 'destructive',
+              title: 'Uh oh! Something went wrong.',
+              description: 'There was a problem submitting your feedback.',
+            });
+          }
     }
   };
 
@@ -156,6 +230,7 @@ export function FeedbackForm({ form }: { form: Form }) {
   }
 
   const progress = ((currentStep + 1) / totalSteps) * 100;
+  const currentQuestion = form.questions[currentStep];
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-secondary p-4">
@@ -173,7 +248,7 @@ export function FeedbackForm({ form }: { form: Form }) {
                 )}
                 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    <QuestionRenderer question={form.questions[currentStep]} />
+                    <QuestionRenderer question={currentQuestion} value={answers[currentQuestion.id]} onChange={handleAnswerChange}/>
                     <div className="flex justify-between items-center pt-4 border-t">
                         <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0}>
                             <ArrowLeft className="h-4 w-4 mr-2" />
