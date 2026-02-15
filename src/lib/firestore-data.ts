@@ -13,6 +13,8 @@ import {
   serverTimestamp,
   DocumentData,
   DocumentSnapshot,
+  deleteDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import type { Form, FeedbackResponse } from './types';
 import { Firestore } from 'firebase/firestore';
@@ -87,4 +89,24 @@ export const addForm = async (db: Firestore, form: Omit<Form, 'id' | 'createdAt'
         createdAt: serverTimestamp(),
     });
     return newFormRef.id;
+};
+
+export const deleteForm = async (db: Firestore, formId: string): Promise<void> => {
+    if (!formId) return;
+
+    const formDocRef = doc(db, 'forms', formId);
+
+    // Also delete all responses associated with the form
+    const responsesQuery = query(collection(db, 'responses'), where('formId', '==', formId));
+    const responseSnapshot = await getDocs(responsesQuery);
+
+    const batch = writeBatch(db);
+
+    responseSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+
+    batch.delete(formDocRef);
+
+    await batch.commit();
 };

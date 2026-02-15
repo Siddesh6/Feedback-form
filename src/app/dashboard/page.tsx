@@ -8,9 +8,10 @@ import {
   ClipboardList,
   MessageSquare,
   PlusCircle,
+  Trash2,
   Users,
 } from 'lucide-react';
-import { getForms } from '@/lib/firestore-data';
+import { getForms, deleteForm } from '@/lib/firestore-data';
 import { useFirestore } from '@/firebase';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Badge } from '@/components/ui/badge';
@@ -34,11 +35,25 @@ import { DashboardCharts } from '@/components/dashboard-charts';
 import { format, parseISO } from 'date-fns';
 import { Form } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 export default function DashboardPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
+  const [formToDelete, setFormToDelete] = useState<Form | null>(null);
 
   useEffect(() => {
     if (firestore) {
@@ -52,6 +67,28 @@ export default function DashboardPage() {
       });
     }
   }, [firestore]);
+
+  const handleDeleteForm = async () => {
+    if (!formToDelete || !firestore) return;
+
+    try {
+        await deleteForm(firestore, formToDelete.id);
+        setForms(forms.filter(form => form.id !== formToDelete.id));
+        toast({
+            title: "Form deleted",
+            description: `"${formToDelete.title}" and all its responses have been deleted.`,
+        });
+    } catch (error) {
+        console.error("Failed to delete form:", error);
+        toast({
+            variant: "destructive",
+            title: "Deletion failed",
+            description: "There was a problem deleting the form.",
+        });
+    } finally {
+        setFormToDelete(null);
+    }
+  };
   
   const totalResponses = forms.reduce((acc, form) => acc + form.responseCount, 0);
   const activeForms = forms.filter((form) => form.status === 'active').length;
@@ -176,8 +213,8 @@ export default function DashboardPage() {
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Responses</TableHead>
                         <TableHead className="hidden md:table-cell">Created</TableHead>
-                        <TableHead>
-                        <span className="sr-only">Actions</span>
+                        <TableHead className="text-right">
+                            Actions
                         </TableHead>
                     </TableRow>
                     </TableHeader>
@@ -195,12 +232,17 @@ export default function DashboardPage() {
                         </TableCell>
                         <TableCell className="text-right">{form.responseCount}</TableCell>
                         <TableCell className="hidden md:table-cell">{format(parseISO(form.createdAt), 'MMM d, yyyy')}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
                             <Button asChild variant="ghost" size="icon">
                             <Link href={`/forms/${form.id}/analytics`}>
                                 <ArrowUpRight className="h-4 w-4" />
                             </Link>
                             </Button>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => setFormToDelete(form)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                            </AlertDialogTrigger>
                         </TableCell>
                         </TableRow>
                     ))}
@@ -216,6 +258,20 @@ export default function DashboardPage() {
   return (
     <AdminLayout>
       {renderContent()}
+       <AlertDialog open={formToDelete !== null} onOpenChange={(isOpen) => !isOpen && setFormToDelete(null)}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      This will permanently delete the form "{formToDelete?.title}" and all of its responses. This action cannot be undone.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setFormToDelete(null)}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteForm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }
