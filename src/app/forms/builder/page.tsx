@@ -19,10 +19,15 @@ const FormBuilder = dynamic(
 export default function FormBuilderPage() {
     return (
         <AdminLayout>
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight font-headline">Form Builder</h1>
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight font-headline">Form Editor</h1>
+                <p className="text-muted-foreground mt-1">
+                    You are editing "My Custom Form". Changes are reflected in the preview and on the shareable form page.
+                </p>
             </div>
-            <FormBuilder />
+            <div className="mt-6">
+                <FormBuilder />
+            </div>
         </AdminLayout>
     )
 }

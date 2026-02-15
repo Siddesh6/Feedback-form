@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import type { Question } from '@/lib/types';
+import { forms } from '@/lib/data';
 import {
   Select,
   SelectContent,
@@ -169,9 +170,11 @@ function QuestionEditor({
 }
 
 export function FormBuilder() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const formToEdit = forms.find(f => f.id === 'user-created-form-1');
+  
+  const [title, setTitle] = useState(formToEdit?.title || 'My Custom Form');
+  const [description, setDescription] = useState(formToEdit?.description || '');
+  const [questions, setQuestions] = useState<Question[]>(formToEdit?.questions || []);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -218,8 +221,8 @@ export function FormBuilder() {
       title: 'Form Saved!',
       description: 'Redirecting to analytics and sharing page.',
     });
-    // In a real app, this would use the ID of the form just saved.
-    // For this demo, we redirect to a pre-added form's analytics page.
+    // In a real app, this would update the form data before redirecting.
+    // For this demo, we just redirect to the pre-existing form's analytics page.
     router.push('/forms/user-created-form-1/analytics');
   }
 
@@ -275,7 +278,7 @@ export function FormBuilder() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label>Category</Label>
-                        <Select>
+                        <Select defaultValue={formToEdit?.category || 'Workshop'}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a category" />
                             </SelectTrigger>
@@ -288,7 +291,7 @@ export function FormBuilder() {
                         </Select>
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Switch id="anonymous-mode" />
+                        <Switch id="anonymous-mode" defaultChecked={formToEdit?.anonymous}/>
                         <Label htmlFor="anonymous-mode">Allow Anonymous Submissions</Label>
                     </div>
                 </CardContent>
