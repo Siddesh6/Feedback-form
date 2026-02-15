@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Plus, GripVertical, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, GripVertical, Trash2, ArrowUp, ArrowDown, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,16 +33,6 @@ const questionTypeOptions: { value: QuestionType; label: string }[] = [
   { value: 'likert', label: 'Likert Scale' },
 ];
 
-const isValidUrl = (urlString?: string): boolean => {
-  if (!urlString) return false;
-  try {
-    new URL(urlString);
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
-
 function QuestionEditor({
     question,
     onUpdate,
@@ -58,6 +48,34 @@ function QuestionEditor({
     isFirst: boolean;
     isLast: boolean;
 }) {
+  const { toast } = useToast();
+
+  const handleFileUpload = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+        toast({
+            variant: 'destructive',
+            title: 'Invalid file type',
+            description: 'Please upload an image file.',
+        });
+        return;
+    }
+
+    if (file.size > 1 * 1024 * 1024) { // 1MB limit
+        toast({
+            variant: 'destructive',
+            title: 'Image is too large',
+            description: 'Please upload an image smaller than 1MB.',
+        });
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        onUpdate({ ...question, imageUrl: e.target?.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
   return (
     <Card className="bg-secondary/50">
       <CardHeader className="flex flex-row items-center gap-4 space-y-0 p-4">
@@ -133,29 +151,57 @@ function QuestionEditor({
         )}
         <div className="space-y-2">
             <Label>Question Image (Optional)</Label>
-            <div className="flex items-center gap-2">
-                <Input
-                placeholder="Paste image URL..."
-                value={question.imageUrl || ''}
-                onChange={(e) => onUpdate({ ...question, imageUrl: e.target.value })}
-                />
-            </div>
-            {isValidUrl(question.imageUrl) && (
+            {question.imageUrl ? (
                 <div className="mt-2 relative aspect-video w-full max-w-sm rounded-md overflow-hidden border">
-                <Image
-                    src={question.imageUrl!}
-                    alt="Question preview"
-                    fill
-                    className="object-cover"
-                />
-                <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7 z-10"
-                    onClick={() => onUpdate({ ...question, imageUrl: undefined })}
+                    <Image
+                        src={question.imageUrl}
+                        alt="Question preview"
+                        fill
+                        className="object-cover"
+                    />
+                    <Button
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-7 w-7 z-10"
+                        onClick={() => onUpdate({ ...question, imageUrl: undefined })}
+                    >
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ) : (
+                <div
+                    className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed rounded-md cursor-pointer hover:bg-muted"
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('bg-muted');
+                    }}
+                    onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('bg-muted');
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove('bg-muted');
+                        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            handleFileUpload(e.dataTransfer.files[0]);
+                        }
+                    }}
+                    onClick={() => document.getElementById(`file-upload-${question.id}`)?.click()}
                 >
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                    <UploadCloud className="w-10 h-10 text-muted-foreground" />
+                    <p className="mt-2 text-sm text-muted-foreground">Drag & drop an image, or click to upload</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 1MB</p>
+                    <input
+                        id={`file-upload-${question.id}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                                handleFileUpload(e.target.files[0]);
+                            }
+                        }}
+                    />
                 </div>
             )}
         </div>
