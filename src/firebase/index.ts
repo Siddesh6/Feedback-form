@@ -1,20 +1,12 @@
 'use client';
 
-import { initializeApp, getApp, getApps, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+// This file is a barrel file. It re-exports functionality from other
+// firebase-related files to provide a single, consistent import path.
+// This helps prevent circular dependencies.
 
-import { firebaseConfig } from './config';
 import { useUser } from './auth/use-user';
-
-// Initialize Firebase only once
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const firestore = getFirestore(app);
-
-function initializeFirebase() {
-  return { firebaseApp: app, auth, firestore };
-}
-
-export { initializeFirebase, useUser };
 export * from './provider';
+
+// No initializeFirebase function is needed here anymore as the provider handles it.
+// Exporting `useUser` alongside the provider hooks.
+export { useUser };

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { createContext, useContext } from 'react';
-import { FirebaseApp } from 'firebase/app';
-import { Auth } from 'firebase/auth';
-import { Firestore } from 'firebase/firestore';
-import { initializeFirebase } from './index';
+import React, { createContext, useContext, useMemo } from 'react';
+import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { firebaseConfig } from './config';
 
 type FirebaseContextValue = {
   firebaseApp: FirebaseApp;
@@ -15,10 +15,15 @@ type FirebaseContextValue = {
 const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 
 export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { firebaseApp, auth, firestore } = initializeFirebase();
+  const services = useMemo(() => {
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    const auth = getAuth(app);
+    const firestore = getFirestore(app);
+    return { firebaseApp: app, auth, firestore };
+  }, []);
 
   return (
-    <FirebaseContext.Provider value={{ firebaseApp, auth, firestore }}>
+    <FirebaseContext.Provider value={services}>
       {children}
     </FirebaseContext.Provider>
   );
