@@ -1,5 +1,3 @@
-'use client';
-
 // This file is a barrel file. It re-exports functionality from other
 // firebase-related files to provide a single, consistent import path.
 // This helps prevent circular dependencies.
