@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
+import { useUser } from '@/firebase/auth/use-user';
 import { addForm } from '@/lib/firestore-data';
 
 type QuestionType = Question['type'];
@@ -226,6 +227,7 @@ export function FormBuilder() {
   const { toast } = useToast();
   const router = useRouter();
   const firestore = useFirestore();
+  const { user } = useUser();
 
   const addQuestion = (type: QuestionType) => {
     const newQuestion: Question = {
@@ -266,54 +268,54 @@ export function FormBuilder() {
 
   const handleSave = async () => {
     if (!title.trim()) {
-        toast({
-            variant: 'destructive',
-            title: 'Title is required',
-            description: 'Please provide a title for your form.'
-        });
-        return;
+      toast({
+        variant: 'destructive',
+        title: 'Title is required',
+        description: 'Please provide a title for your form.',
+      });
+      return;
     }
-    if (!firestore) {
-        toast({
-            variant: 'destructive',
-            title: 'Database not available',
-            description: 'Please try again later.'
-        });
-        return;
+    if (!firestore || !user) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Error',
+        description: 'Please sign in to save the form.',
+      });
+      return;
     }
-    
+
     setIsSaving(true);
     toast({
       title: 'Saving Form...',
       description: 'Your new form is being created.',
     });
 
-    const newForm: Omit<Form, 'id' | 'createdAt' | 'responseCount'> = {
-        title,
-        description,
-        questions,
-        category,
-        anonymous,
-        status: 'active',
+    const formToSave: Omit<Form, 'id' | 'createdAt' | 'responseCount' | 'userId'> = {
+      title,
+      description,
+      questions,
+      category,
+      anonymous,
+      status: 'active',
     };
 
     try {
-        const newFormId = await addForm(firestore, newForm);
-        toast({
-          title: 'Form Saved!',
-          description: 'Redirecting to analytics and sharing page.',
-        });
-        router.push(`/forms/${newFormId}/analytics`);
+      const newFormId = await addForm(firestore, formToSave, user.uid);
+      toast({
+        title: 'Form Saved!',
+        description: 'Redirecting to analytics and sharing page.',
+      });
+      router.push(`/forms/${newFormId}/analytics`);
     } catch (error) {
-        console.error("Error saving form:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Failed to save form',
-            description: 'There was an error saving your form to the database.'
-        });
-        setIsSaving(false);
+      console.error("Error saving form:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Failed to save form',
+        description: 'There was an error saving your form to the database.',
+      });
+      setIsSaving(false);
     }
-  }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -386,7 +388,7 @@ export function FormBuilder() {
                 </CardContent>
             </Card>
             <div className="flex flex-col gap-2">
-                <Button className="w-full" onClick={handleSave} disabled={isSaving}>
+                <Button className="w-full" onClick={handleSave} disabled={isSaving || !user}>
                     {isSaving ? 'Saving...' : 'Save and Publish'}
                 </Button>
                  <Button variant="outline" className="w-full" disabled>Preview</Button>

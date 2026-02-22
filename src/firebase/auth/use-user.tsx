@@ -1,26 +1,49 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { useAuth } from '@/firebase/provider';
+import { onAuthStateChanged, User as FirebaseAuthUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth, useFirestore } from '@/firebase/provider';
+import { User, UserRole } from '@/lib/types';
 
 export function useUser() {
   const auth = useAuth();
+  const db = useFirestore();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!auth) {
-      // Firebase might not be initialized yet, so we wait.
+    if (!auth || !db) {
       return;
     }
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseAuthUser | null) => {
+      if (firebaseUser) {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            role: userData.role as UserRole,
+          });
+        } else {
+          // Handle case where user exists in Auth but not in Firestore
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            role: 'user', // Default role
+          });
+        }
+      } else {
+        setUser(null);
+      }
       setLoading(false);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, db]);
 
   return { user, loading };
 }

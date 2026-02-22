@@ -2,10 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { LogOut, Settings, User } from 'lucide-react';
+import { LogOut, Settings, User as UserIcon } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -25,13 +25,14 @@ const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar-1');
 
 export function UserNav() {
   const { user, loading } = useUser();
+  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const handleLogout = async () => {
-    if (!user) return;
+    if (!auth) return;
     try {
-      await signOut(user.auth);
+      await signOut(auth);
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
@@ -74,12 +75,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-9 w-9">
-            {user.photoURL ? (
-              <AvatarImage
-                src={user.photoURL}
-                alt={user.displayName || "User Avatar"}
-              />
-            ) : userAvatar ? (
+            {userAvatar ? (
                <AvatarImage
                 src={userAvatar.imageUrl}
                 alt="Admin"
@@ -95,7 +91,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.displayName || 'User'}</p>
+            <p className="text-sm font-medium leading-none">{user.email || 'User'}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
@@ -104,7 +100,7 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem disabled>
-            <User className="mr-2 h-4 w-4" />
+            <UserIcon className="mr-2 h-4 w-4" />
             <span>Profile</span>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

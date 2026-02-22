@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { getForms, deleteForm } from '@/lib/firestore-data';
 import { useFirestore } from '@/firebase';
+import { useUser } from '@/firebase/auth/use-user';
 import { AdminLayout } from '@/components/layout/admin-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,15 +50,16 @@ import {
 
 export default function DashboardPage() {
   const firestore = useFirestore();
+  const { user, loading: userLoading } = useUser();
   const { toast } = useToast();
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
 
   useEffect(() => {
-    if (firestore) {
+    if (firestore && user) {
       setLoading(true);
-      getForms(firestore).then(data => {
+      getForms(firestore, user).then(data => {
         setForms(data);
         setLoading(false);
       }).catch(err => {
@@ -65,7 +67,7 @@ export default function DashboardPage() {
         setLoading(false);
       });
     }
-  }, [firestore]);
+  }, [firestore, user]);
 
   const handleDeleteForm = async () => {
     if (!formToDelete || !firestore) return;
@@ -94,7 +96,7 @@ export default function DashboardPage() {
   const avgResponses = forms.length > 0 ? Math.round(totalResponses / forms.length) : 0;
 
   const renderContent = () => {
-    if (loading) {
+    if (loading || userLoading) {
       return (
         <div className="space-y-6">
           <div className="flex items-center justify-between">

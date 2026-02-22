@@ -15,8 +15,9 @@ import {
   DocumentSnapshot,
   deleteDoc,
   writeBatch,
+  setDoc,
 } from 'firebase/firestore';
-import type { Form, FeedbackResponse } from './types';
+import type { Form, FeedbackResponse, User } from './types';
 import { Firestore } from 'firebase/firestore';
 
 // Helper to convert Firestore doc to Form object
@@ -32,22 +33,32 @@ const toForm = (docSnap: DocumentSnapshot<DocumentData>): Form => {
     status: data.status,
     createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() || new Date().toISOString(),
     responseCount: 0, // This will be populated separately by the getForms function
+    userId: data.userId,
   };
 };
 
-export const getForms = async (db: Firestore): Promise<Form[]> => {
-    const formsCollection = collection(db, 'forms');
-    const formSnapshot = await getDocs(formsCollection);
-    const formsList = formSnapshot.docs.map(toForm);
+export const getForms = async (db: Firestore, user: User | null): Promise<Form[]> => {
+  if (!user) return [];
 
-    // Get response counts for each form
-    for (const form of formsList) {
-        const responsesQuery = query(collection(db, 'responses'), where('formId', '==', form.id));
-        const snapshot = await getCountFromServer(responsesQuery);
-        form.responseCount = snapshot.data().count;
-    }
-    
-    return formsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const formsCollection = collection(db, 'forms');
+  let formsQuery = query(formsCollection);
+
+  // If the user is not an admin, they should only see their own forms
+  if (user.role !== 'admin') {
+    formsQuery = query(formsCollection, where('userId', '==', user.uid));
+  }
+
+  const formSnapshot = await getDocs(formsQuery);
+  const formsList = formSnapshot.docs.map(toForm);
+
+  // Get response counts for each form
+  for (const form of formsList) {
+    const responsesQuery = query(collection(db, 'responses'), where('formId', '==', form.id));
+    const snapshot = await getCountFromServer(responsesQuery);
+    form.responseCount = snapshot.data().count;
+  }
+
+  return formsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
 export const getFormById = async (db: Firestore, id: string): Promise<Form | undefined> => {
@@ -66,47 +77,56 @@ export const getFormById = async (db: Firestore, id: string): Promise<Form | und
 };
 
 export const getResponsesByFormId = async (db: Firestore, formId: string): Promise<FeedbackResponse[]> => {
-    if (!formId) return [];
-    const responsesQuery = query(collection(db, 'responses'), where('formId', '==', formId));
-    const responseSnapshot = await getDocs(responsesQuery);
-    return responseSnapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            formId: data.formId,
-            isAnonymous: data.isAnonymous,
-            submittedAt: (data.submittedAt as Timestamp).toDate().toISOString(),
-            answers: data.answers,
-            textFeedback: data.textFeedback,
-        } as FeedbackResponse;
-    });
+  if (!formId) return [];
+  const responsesQuery = query(collection(db, 'responses'), where('formId', '==', formId));
+  const responseSnapshot = await getDocs(responsesQuery);
+  return responseSnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      formId: data.formId,
+      isAnonymous: data.isAnonymous,
+      submittedAt: (data.submittedAt as Timestamp).toDate().toISOString(),
+      answers: data.answers,
+      textFeedback: data.textFeedback,
+    } as FeedbackResponse;
+  });
 };
 
-export const addForm = async (db: Firestore, form: Omit<Form, 'id' | 'createdAt' | 'responseCount'>): Promise<string> => {
-    const formsCollection = collection(db, 'forms');
-    const newFormRef = await addDoc(formsCollection, {
-        ...form,
-        createdAt: serverTimestamp(),
-    });
-    return newFormRef.id;
+export const addForm = async (db: Firestore, form: Omit<Form, 'id' | 'createdAt' | 'responseCount'>, userId: string): Promise<string> => {
+  const formsCollection = collection(db, 'forms');
+  const newFormRef = await addDoc(formsCollection, {
+    ...form,
+    userId,
+    createdAt: serverTimestamp(),
+  });
+  return newFormRef.id;
 };
 
 export const deleteForm = async (db: Firestore, formId: string): Promise<void> => {
-    if (!formId) return;
+  if (!formId) return;
 
-    const formDocRef = doc(db, 'forms', formId);
+  const formDocRef = doc(db, 'forms', formId);
 
-    // Also delete all responses associated with the form
-    const responsesQuery = query(collection(db, 'responses'), where('formId', '==', formId));
-    const responseSnapshot = await getDocs(responsesQuery);
+  // Also delete all responses associated with the form
+  const responsesQuery = query(collection(db, 'responses'), where('formId', '==', formId));
+  const responseSnapshot = await getDocs(responsesQuery);
 
-    const batch = writeBatch(db);
+  const batch = writeBatch(db);
 
-    responseSnapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-    });
+  responseSnapshot.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
 
-    batch.delete(formDocRef);
+  batch.delete(formDocRef);
 
-    await batch.commit();
+  await batch.commit();
+};
+
+export const createUserInDb = async (db: Firestore, user: User): Promise<void> => {
+  const userDocRef = doc(db, 'users', user.uid);
+  await setDoc(userDocRef, {
+    email: user.email,
+    role: user.role,
+  });
 };

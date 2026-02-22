@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase/auth/use-user';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,9 +19,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/icons';
+import { createUserInDb } from '@/lib/firestore-data';
+import { User } from '@/lib/types';
 
 export default function SignupPage() {
   const auth = useAuth();
+  const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading: userLoading } = useUser();
@@ -50,7 +54,15 @@ export default function SignupPage() {
     setError(null);
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser: User = {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        role: 'user', // Default role for new users
+      };
+      if(db) {
+        await createUserInDb(db, newUser);
+      }
       toast({
         title: "Account created!",
         description: "You are now logged in.",
@@ -132,7 +144,7 @@ export default function SignupPage() {
               />
             </div>
             {error && <p className="text-sm text-destructive text-center">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" disabled={loading || !db}>
               {loading ? <Loader2 className="animate-spin" /> : 'Sign Up'}
             </Button>
           </form>

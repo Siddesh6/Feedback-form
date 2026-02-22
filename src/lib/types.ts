@@ -18,6 +18,7 @@ export type Form = {
   status: 'active' | 'expired';
   createdAt: string;
   responseCount: number;
+  userId: string;
 };
 
 export type Answer = {
@@ -34,4 +35,12 @@ export type FeedbackResponse = {
   sentiment?: 'positive' | 'negative' | 'neutral';
   sentimentScore?: number;
   textFeedback: string;
+};
+
+export type UserRole = 'admin' | 'user';
+
+export type User = {
+  uid: string;
+  email: string | null;
+  role: UserRole;
 };
