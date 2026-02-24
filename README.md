@@ -26,10 +26,10 @@ Frontend:
 - JavaScript
 
 Backend (if applicable):
-- Firebase / Node.js / (mention what you used)
+- Firebase / Node.js
 
 Database:
-- Firebase Firestore / Realtime Database (update as per your project)
+- Firebase Firestore / Realtime Database.
 
 
 ## ⚙️ Installation & Setup
@@ -43,7 +43,7 @@ git clone https://github.com/your-username/opinova.git
 2. Navigate to the project folder
 
 ```bash
-cd opinova
+cd opinion-loop
 ```
 
 3. Open `index.html` in your browser
