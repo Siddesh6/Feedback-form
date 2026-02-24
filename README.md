@@ -1,7 +1,4 @@
-Here’s a professional **README.md** file you can use for your GitHub project (based on your feedback application project):
-
----
-
+**README.md**
 ````markdown
 # 🚀 Opinova – Smart Feedback Management System
 
@@ -34,13 +31,6 @@ Backend (if applicable):
 Database:
 - Firebase Firestore / Realtime Database (update as per your project)
 
----
-
-## 📸 Screenshots
-
-(Add screenshots here after uploading images to your repo)
-
----
 
 ## ⚙️ Installation & Setup
 
