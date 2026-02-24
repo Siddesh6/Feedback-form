@@ -1,8 +1,8 @@
 **README.md**
 ````markdown
-# 🚀 Opinova – Smart Feedback Management System
+# 🚀 Opinion-loop – Smart Feedback Management System
 
-Opinova is a modern and user-friendly feedback management web application designed to collect, manage, and analyze user opinions efficiently.  
+Opinion-loop is a modern and user-friendly feedback management web application designed to collect, manage, and analyze user opinions efficiently.  
 It helps organizations, institutions, and businesses gather structured feedback and make data-driven improvements.
 
 ---
